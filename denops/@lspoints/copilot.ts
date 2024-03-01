@@ -124,7 +124,7 @@ async function makeParams(denops: Denops): Promise<Params> {
   const position: Position = {
     line: lnum - 1,
     character: line
-      .substring(0, col - (/^[iR]/.test(mode) || line.length === 0 ? 1 : 0))
+      .substring(0, col - (/^[iR]/.test(mode) || !line ? 1 : 0))
       .length,
   };
   return {
@@ -150,12 +150,12 @@ async function getCurrentCandidate(denops: Denops): Promise<Candidate | null> {
       denops.call("line", "."),
     ],
   ) as [string, CopilotContext | null, number];
-  if (mode !== "i" || !context || context.candidates.length === 0) {
+  if (mode !== "i" || !context || !context.candidates) {
     return null;
   }
-  const selected = context.candidates[context.selected] ?? {};
+  const selected = context.candidates[context.selected];
   if (
-    !selected.range || selected.range.start.line !== lnum - 1 ||
+    !selected?.range || selected.range.start.line !== lnum - 1 ||
     selected.range.start.character !== 0
   ) {
     return null;

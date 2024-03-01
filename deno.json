@@ -1,6 +1,21 @@
 {
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true
+  },
   "exclude": [
     "dist/**/*"
   ],
-  "lock": false
+  "lint": {
+    "rules": {
+      "include": [
+        "eqeqeq",
+        "explicit-function-return-type",
+        "no-await-in-loop"
+      ]
+    }
+  },
+  "lock": false,
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check **/*.ts"
+  }
 }
