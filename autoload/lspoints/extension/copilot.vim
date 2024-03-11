@@ -14,7 +14,7 @@ else
 endif
 
 function! s:get_current_candidate() abort
-  if !exists('b:__copilot') || mode() !~# '^[iR]' || pumvisible() || empty(b:__copilot.candidates)
+  if !exists('b:__copilot') || mode() !~# '^[iR]'|| empty(b:__copilot.candidates)
     return v:null
   endif
   let selected = b:__copilot.candidates->get(b:__copilot.selected, {})
@@ -66,7 +66,7 @@ function! lspoints#extension#copilot#draw_preview() abort
   let newline_pos = candidate.text->stridx("\n")
   let text[0] = candidate.text[col('.') - 1 : newline_pos > 0 ? newline_pos - 1 : -1]
   if has('nvim')
-    let data = #{ id: 1, virt_text_win_col: virtcol('.') - 1, hl_mode: 'combine' }
+    let data = #{ id: 1, virt_text_pos: 'overlay', hl_mode: 'combine' }
     let data.virt_text = [[text[0], s:hlgroup]]
     if len(text) > 1
       let data.virt_lines = text[1:]->map({ -> [[v:val, s:hlgroup]] })

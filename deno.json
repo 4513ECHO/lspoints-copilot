@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "useUnknownInCatchVariables": true
   },
   "exclude": [
     "dist/**/*"
@@ -9,13 +10,12 @@
     "rules": {
       "include": [
         "eqeqeq",
-        "explicit-function-return-type",
-        "no-await-in-loop"
+        "explicit-function-return-type"
       ]
     }
   },
   "lock": false,
   "tasks": {
-    "check": "deno fmt --check && deno lint && deno check **/*.ts"
+    "lint": "deno fmt --check && deno lint && deno check **/*.ts"
   }
 }

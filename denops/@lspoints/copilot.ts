@@ -1,11 +1,11 @@
-import type { Denops } from "https://deno.land/x/lspoints@v0.0.6/deps/denops.ts";
+import type { Denops } from "https://deno.land/x/lspoints@v0.0.7/deps/denops.ts";
 import {
   BaseExtension,
   type Lspoints,
-} from "https://deno.land/x/lspoints@v0.0.6/interface.ts";
-import { is, u } from "https://deno.land/x/lspoints@v0.0.6/deps/unknownutil.ts";
-import { collect } from "https://deno.land/x/denops_std@v6.2.0/batch/collect.ts";
-import { fromFileUrl } from "https://deno.land/std@0.218.0/path/from_file_url.ts";
+} from "https://deno.land/x/lspoints@v0.0.7/interface.ts";
+import { is, u } from "https://deno.land/x/lspoints@v0.0.7/deps/unknownutil.ts";
+import * as batch from "https://deno.land/x/denops_std@v6.3.0/batch/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.219.1/path/from_file_url.ts";
 
 type Position = {
   line: number;
@@ -59,7 +59,7 @@ type OriginalCopilotContext = {
   cycling?: Agent<"getCompletionsCycling">;
   cycling_callbacks?: VimFuncref[];
   first: Agent<"getCompletions">;
-  shown_choices?: Record<string, true | undefined>;
+  shown_choices?: Record<string, true>;
   params: Params;
   suggestions?: Candidate[];
 };
@@ -67,8 +67,16 @@ type OriginalCopilotContext = {
 type CopilotContext = {
   candidates: Candidate[];
   selected: number;
-  shownCandidates: Record<string, true | undefined>;
+  shownCandidates: Record<string, true>;
   params: Params;
+};
+
+type ExtmarkData = {
+  id: number;
+  virt_text: ([string] | [string, string])[];
+  virt_text_pos: string;
+  hl_mode: string;
+  virt_lines?: ([string] | [string, string])[][];
 };
 
 const isPosition: u.Predicate<Position> = is.ObjectOf({
@@ -108,7 +116,7 @@ const isParams: u.Predicate<Params> = is.ObjectOf({
 
 async function makeParams(denops: Denops): Promise<Params> {
   const [uri, version, insertSpaces, shiftWidth, line, lnum, col, mode] =
-    await collect(
+    await batch.collect(
       denops,
       (denops) => [
         denops.call("bufnr", ""),
@@ -142,7 +150,7 @@ async function makeParams(denops: Denops): Promise<Params> {
 }
 
 async function getCurrentCandidate(denops: Denops): Promise<Candidate | null> {
-  const [mode, context, lnum] = await collect(
+  const [mode, context, lnum] = await batch.collect(
     denops,
     (denops) => [
       denops.call("mode"),
@@ -150,7 +158,7 @@ async function getCurrentCandidate(denops: Denops): Promise<Candidate | null> {
       denops.call("line", "."),
     ],
   ) as [string, CopilotContext | null, number];
-  if (mode !== "i" || !context || !context.candidates) {
+  if (!/^[iR]/.test(mode) || !context || !context.candidates) {
     return null;
   }
   const selected = context.candidates[context.selected];
@@ -167,16 +175,16 @@ async function getDisplayAdjustment(
   denops: Denops,
   candidate: Candidate | null,
 ): Promise<[text: string, outdent: number, toDelete: number]> {
-  const [line, col] = await collect(
+  if (!candidate) {
+    return ["", 0, 0];
+  }
+  const [line, col] = await batch.collect(
     denops,
     (denops) => [
       denops.call("getline", "."),
       denops.call("col", "."),
     ],
   ) as [string, number];
-  if (!candidate) {
-    return ["", 0, 0];
-  }
   const offset = col - 1;
   const selectedText = line.substring(0, candidate.range.start.character) +
     candidate.text.replace(/\n*$/, "");
@@ -184,7 +192,7 @@ async function getDisplayAdjustment(
   const endOffset = line.length > candidate.range.end.character
     ? line.length
     : candidate.range.end.character;
-  const toDelete = line.substring(offset, endOffset);
+  const toDelete = line.substring(offset, endOffset + 1);
   if (/^\s*$/.test(typed)) {
     const leading = selectedText.match(/^\s*/)?.[0] ?? "";
     const unindented = selectedText.substring(leading.length);
@@ -197,6 +205,97 @@ async function getDisplayAdjustment(
     return [selectedText.substring(offset), 0, toDelete.length];
   }
   return ["", 0, 0];
+}
+
+const hlgroup = "CopilotSuggestion";
+const annotHlgroup = "CopilotAnnotation";
+
+async function drawPreview(denops: Denops): Promise<string | undefined> {
+  const candidate = await getCurrentCandidate(denops);
+  const text = candidate?.displayText.split("\n");
+  await clearPreview(denops);
+  if (!candidate || !text) {
+    return;
+  }
+  const annot = "";
+  const [col, lnum, colEnd, context] = await batch.collect(
+    denops,
+    (denops) => [
+      denops.call("col", "."),
+      denops.call("line", "."),
+      denops.call("col", "$"),
+      denops.call("getbufvar", "", "__copilot", null),
+    ],
+  ) as [number, number, number, CopilotContext | null];
+  const newlinePos = candidate.text.indexOf("\n");
+  text[0] = candidate.text.substring(
+    col - 1,
+    newlinePos > -1 ? newlinePos : undefined,
+  );
+  switch (denops.meta.host) {
+    case "nvim": {
+      const ns = await denops.call(
+        "nvim_create_namespace",
+        "lspoints-extension-copilot",
+      );
+      const data: ExtmarkData = {
+        id: 1,
+        virt_text: [[text[0], hlgroup]],
+        virt_text_pos: "overlay",
+        hl_mode: "combine",
+      };
+      if (text.length > 1) {
+        data.virt_lines = text.slice(1).map((line) => [[line, hlgroup]]);
+        if (annot) {
+          data.virt_lines[-1]?.push([" "], [annot, annotHlgroup]);
+        }
+      } else if (annot) {
+        data.virt_text.push([" "], [annot, annotHlgroup]);
+      }
+      await denops.call("nvim_buf_set_extmark", 0, ns, lnum - 1, col - 1, data);
+      break;
+    }
+    case "vim":
+      await batch.batch(denops, async (denops) => {
+        await denops.call("prop_add", lnum, col, {
+          type: hlgroup,
+          text: text[0],
+        });
+        for (const line of text.slice(1)) {
+          await denops.call("prop_add", lnum, 0, {
+            type: hlgroup,
+            text_align: "below",
+            text: line,
+          });
+        }
+        if (annot) {
+          await denops.call("prop_add", lnum, colEnd, {
+            type: annotHlgroup,
+            text: " " + annot,
+          });
+        }
+      });
+  }
+  if (context && !context.shownCandidates[candidate.uuid]) {
+    return candidate.uuid;
+  }
+}
+
+async function clearPreview(denops: Denops): Promise<void> {
+  switch (denops.meta.host) {
+    case "nvim": {
+      const ns = await denops.call(
+        "nvim_create_namespace",
+        "lspoints-extension-copilot",
+      );
+      await denops.call("nvim_buf_del_extmark", 0, ns, 1);
+      break;
+    }
+    case "vim":
+      await denops.call("prop_remove", { type: hlgroup, all: true });
+      await denops.call("prop_remove", { type: annotHlgroup, all: true });
+      break;
+  }
 }
 
 export class Extension extends BaseExtension {
@@ -225,15 +324,9 @@ export class Extension extends BaseExtension {
         copilot: {
           cmd: ["node", entrypoint],
           initializationOptions,
+          settings,
         },
       },
-    });
-
-    lspoints.subscribeAttach((client) => {
-      if (client !== "copilot") {
-        return;
-      }
-      lspoints.notify(client, "workspace/didChangeConfiguration", settings);
     });
 
     lspoints.defineCommands("copilot", {
@@ -270,7 +363,16 @@ export class Extension extends BaseExtension {
               } satisfies CopilotContext,
             })
           )
-          .then(() => denops.call("lspoints#extension#copilot#draw_preview"));
+          .then(() => drawPreview(denops))
+          .then((uuid) => {
+            if (uuid) {
+              denops.cmd(
+                "let b:__copilot.shownCandidates[uuid] = v:true",
+                { uuid },
+              );
+              lspoints.request("copilot", "notifyShown", { uuid });
+            }
+          });
       },
     });
 
