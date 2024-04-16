@@ -1,4 +1,5 @@
 let s:initailized = v:false
+let s:delay = 15
 let s:hlgroup = 'CopilotSuggestion'
 let s:annot_hlgroup = 'CopilotAnnotation'
 let s:timer = -1
@@ -115,10 +116,12 @@ function! lspoints#extension#copilot#accept(options = {}) abort
     let text = text->matchstr("\n*\\%(" .. a:options.pattern ..'\)')
           \ ->substitute("\n*$", '', '') ?? text
   endif
-  call lspoints#request('copilot', 'notifyAccepted',
-        \ #{ uuid: candidate.uuid, acceptedLength: strutf16len(text) })
+  call lspoints#request('copilot', 'notifyAccepted', #{
+        \ uuid: candidate.uuid,
+        \ acceptedLength: strutf16len(text, v:true),
+        \ })
   call lspoints#extension#copilot#clear_preview()
-  " NOTE: Append <C-u> before <CR> to avoid auto-indentation
+  " NOTE: Append <C-u> after <CR> to avoid auto-indentation
   eval [repeat("\<BS>", outdent), repeat("\<Del>", delete),
         \ text->substitute("\n", "\n\<C-u>", 'g'), a:options->has_key('pattern') ?  '' : "\<End>",
         \ ]->join('')->feedkeys('ni')
@@ -142,7 +145,7 @@ endfunction
 function s:schedule() abort
   call lspoints#extension#copilot#draw_preview()
   call timer_stop(s:timer)
-  let s:timer = timer_start(15, function('s:trigger', [bufnr('')]))
+  let s:timer = timer_start(s:delay, function('s:trigger', [bufnr('')]))
 endfunction
 
 function! s:trigger(bufnr, timer) abort

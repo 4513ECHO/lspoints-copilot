@@ -3,29 +3,22 @@ import {
   BaseExtension,
   type Lspoints,
 } from "https://deno.land/x/lspoints@v0.0.7/interface.ts";
+import { LSP } from "https://deno.land/x/lspoints@v0.0.7/deps/lsp.ts";
 import { is, u } from "https://deno.land/x/lspoints@v0.0.7/deps/unknownutil.ts";
 import * as batch from "https://deno.land/x/denops_std@v6.4.0/batch/mod.ts";
 import { fromFileUrl } from "https://deno.land/std@0.223.0/path/from_file_url.ts";
 
-type Position = {
-  line: number;
-  character: number;
-};
-type Range = {
-  start: Position;
-  end: Position;
-};
 type VimFuncref = unknown;
 type Params = {
   doc: {
     indentSize: number;
     insertSpaces: boolean;
-    position: Position;
+    position: LSP.Position;
     tabSize: number;
     uri: string | number;
     version: number;
   };
-  position: Position;
+  position: LSP.Position;
   textDocument: {
     uri: string | number;
     version: number;
@@ -34,8 +27,8 @@ type Params = {
 type Candidate = {
   displayText: string;
   docVersion: number;
-  position: Position;
-  range: Range;
+  position: LSP.Position;
+  range: LSP.Range;
   text: string;
   uuid: string;
 };
@@ -79,21 +72,18 @@ type ExtmarkData = {
   virt_lines?: ([string] | [string, string])[][];
 };
 
-const isPosition: u.Predicate<Position> = is.ObjectOf({
+const isPosition: u.Predicate<LSP.Position> = is.ObjectOf({
   line: is.Number,
   character: is.Number,
 });
-const isRange: u.Predicate<Range> = is.ObjectOf({
+const isRange: u.Predicate<LSP.Range> = is.ObjectOf({
   start: isPosition,
   end: isPosition,
 });
 const isCandidate: u.Predicate<Candidate> = is.ObjectOf({
   displayText: is.String,
   docVersion: is.Number,
-  position: is.ObjectOf({
-    line: is.Number,
-    character: is.Number,
-  }),
+  position: isPosition,
   range: isRange,
   text: is.String,
   uuid: is.String,
@@ -128,8 +118,8 @@ async function makeParams(denops: Denops): Promise<Params> {
         denops.call("col", "."),
         denops.call("mode"),
       ],
-    ) as [string, number, number, number, string, number, number, string];
-  const position: Position = {
+    ) as [number, number, number, number, string, number, number, string];
+  const position: LSP.Position = {
     line: lnum - 1,
     character: line
       .substring(0, col - (/^[iR]/.test(mode) || !line ? 1 : 0))
