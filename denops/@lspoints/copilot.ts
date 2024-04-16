@@ -4,8 +4,8 @@ import {
   type Lspoints,
 } from "https://deno.land/x/lspoints@v0.0.7/interface.ts";
 import { is, u } from "https://deno.land/x/lspoints@v0.0.7/deps/unknownutil.ts";
-import * as batch from "https://deno.land/x/denops_std@v6.3.0/batch/mod.ts";
-import { fromFileUrl } from "https://deno.land/std@0.219.1/path/from_file_url.ts";
+import * as batch from "https://deno.land/x/denops_std@v6.4.0/batch/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.223.0/path/from_file_url.ts";
 
 type Position = {
   line: number;
