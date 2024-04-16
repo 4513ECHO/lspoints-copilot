@@ -1,3 +1,4 @@
+let s:initailized = v:false
 let s:hlgroup = 'CopilotSuggestion'
 let s:annot_hlgroup = 'CopilotAnnotation'
 let s:timer = -1
@@ -123,12 +124,14 @@ function! lspoints#extension#copilot#accept(options = {}) abort
         \ ]->join('')->feedkeys('ni')
 endfunction
 
-function! lspoints#extension#copilot#on_insert_enter() abort
+function! lspoints#extension#copilot#on_filetype() abort
   " NOTE: Check b:copilot_disabled until the plugin is improved enough to replace copilot.vim
-  if g:->get('lspoints#extensions', [])->index('copilot') < 0 || !b:->get('copilot_disabled', v:false)
-    return
+  if b:->get('copilot_disabled', v:false) && &l:modifiable && &l:buflisted
+    call lspoints#attach('copilot')
   endif
-  call lspoints#attach('copilot')
+endfunction
+
+function! lspoints#extension#copilot#on_insert_enter() abort
   call s:schedule()
 endfunction
 
@@ -150,6 +153,13 @@ function! s:trigger(bufnr, timer) abort
   call lspoints#extension#copilot#suggest()
 endfunction
 
+function! lspoints#extension#copilot#on_buf_enter() abort
+  if !denops#plugin#is_loaded('lspoints')
+    call lspoints#denops#register()
+  endif
+  call lspoints#denops#notify('executeCommand', ['copilot', 'notifyDidFocus', bufnr('')])
+endfunction
+
 function! lspoints#extension#copilot#on_buf_unload() abort
   call s:reject(+expand('<abuf>'))
 endfunction
@@ -162,8 +172,18 @@ function! s:reject(bufnr) abort
   endif
 endfunction
 
+function! lspoints#extension#copilot#initalize() abort
+  if !s:initailized && g:->get('lspoints#extensions', [])->index('copilot') > -1
+    call lspoints#start('copilot')
+    let s:initailized = v:true
+  endif
+endfunction
+
 function! lspoints#extension#copilot#suggest() abort
-  call denops#plugin#wait_async('lspoints', { -> denops#notify('lspoints', 'executeCommand', ['copilot', 'suggest']) })
+  if !denops#plugin#is_loaded('lspoints')
+    call lspoints#denops#register()
+  endif
+  call lspoints#denops#notify('executeCommand', ['copilot', 'suggest'])
 endfunction
 
 function! lspoints#extension#copilot#next() abort

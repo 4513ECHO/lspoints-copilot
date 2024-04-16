@@ -336,6 +336,7 @@ export class Extension extends BaseExtension {
         if (!client) {
           return;
         }
+        // Sync textDocument
         for (const doc of [params.doc, params.textDocument]) {
           if (is.Number(doc.uri)) {
             const bufnr = doc.uri;
@@ -373,6 +374,15 @@ export class Extension extends BaseExtension {
               lspoints.request("copilot", "notifyShown", { uuid });
             }
           });
+      },
+      notifyDidFocus: async (bufnr) => {
+        const client = lspoints.getClient("copilot");
+        if (!client || !is.Number(bufnr) || !client.isAttached(bufnr)) {
+          return;
+        }
+        await lspoints.notify("copilot", "textDocument/didFocus", {
+          textDocument: { uri: client.getUriFromBufNr(bufnr) },
+        });
       },
     });
 

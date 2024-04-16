@@ -11,10 +11,17 @@ endfunction
 augroup lspoints_extension_copilot
   autocmd!
   autocmd ColorScheme * call s:on_colorscheme()
+  autocmd FileType * call lspoints#extension#copilot#on_filetype()
   autocmd InsertLeave * call lspoints#extension#copilot#clear_preview()
   autocmd InsertEnter * call lspoints#extension#copilot#on_insert_enter()
   autocmd CursorMovedI * call lspoints#extension#copilot#on_cursor_moved()
+  autocmd BufEnter * call lspoints#extension#copilot#on_buf_enter()
   autocmd BufUnload * call lspoints#extension#copilot#on_buf_unload()
+  if v:vim_did_enter
+    call lspoints#extension#copilot#initalize()
+  else
+    autocmd VimEnter * call lspoints#extension#copilot#initalize()
+  endif
 augroup END
 
 call s:on_colorscheme()
