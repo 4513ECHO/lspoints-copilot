@@ -16,6 +16,7 @@
   },
   "lock": false,
   "tasks": {
-    "lint": "deno fmt --check && deno lint && deno check **/*.ts"
+    "lint": "deno fmt --check && deno lint && deno check **/*.ts",
+    "update_agent": "deno run --allow-run=git --allow-read=copilot.vim --allow-write=. scripts/update_agent.ts"
   }
 }
