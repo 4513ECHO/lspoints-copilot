@@ -4,7 +4,8 @@
     "useUnknownInCatchVariables": true
   },
   "exclude": [
-    "dist/**/*"
+    "dist/**/*",
+    "main.js"
   ],
   "lint": {
     "rules": {
@@ -16,7 +17,7 @@
   },
   "lock": false,
   "tasks": {
-    "lint": "deno fmt --check && deno lint && deno check **/*.ts",
+    "lint": "deno fmt --check && deno lint && deno check .",
     "update_agent": "deno run --allow-run=git --allow-read=copilot.vim --allow-write=. scripts/update_agent.ts"
   }
 }
