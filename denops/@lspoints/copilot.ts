@@ -15,8 +15,8 @@ import { Lock } from "jsr:@core/asyncutil@^1.1.1/lock";
 
 type VimFuncref = unknown;
 enum CopilotTriggerKind {
-  Invoked = 0,
-  Automatic = 1,
+  Invoked = 1,
+  Automatic = 2,
 }
 type Params = {
   context: {
@@ -291,11 +291,13 @@ export class Extension extends BaseExtension {
       disabledLanguages: [{ languageId: "." }],
     };
 
-    const entrypoint = fromFileUrl(import.meta.resolve("../../dist/agent.js"));
+    const entrypoint = fromFileUrl(
+      import.meta.resolve("../../dist/language-server.js"),
+    );
     lspoints.settings.patch({
       startOptions: {
         copilot: {
-          cmd: ["node", entrypoint],
+          cmd: ["node", entrypoint, "--stdio"],
           initializationOptions,
           settings,
         },
