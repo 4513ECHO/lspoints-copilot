@@ -7,6 +7,7 @@ import {
 import * as LSP from "npm:vscode-languageserver-types@^3.17.5";
 import * as u from "jsr:@core/unknownutil@^4.3.0";
 import { is } from "jsr:@core/unknownutil@^4.3.0/is";
+import { asOptional } from "jsr:@core/unknownutil@^4.3.0/as/optional";
 import * as batch from "jsr:@denops/std@^7.1.1/batch";
 import { rawString } from "jsr:@denops/std@^7.1.1/eval";
 import { send } from "jsr:@denops/std@^7.1.1/helper/keymap";
@@ -60,6 +61,7 @@ type CopilotContext = {
   candidates: Candidate[];
   selected: number;
   params: Params;
+  cyclingDeltas?: (1 | -1)[];
 };
 
 type ExtmarkData = {
@@ -86,6 +88,12 @@ const isParams: u.Predicate<Params> = is.ObjectOf({
   formattingOptions: LSP.FormattingOptions.is,
   position: LSP.Position.is,
   textDocument: LSP.VersionedTextDocumentIdentifier.is,
+});
+const isContext: u.Predicate<CopilotContext> = is.ObjectOf({
+  candidates: is.ArrayOf(isCandidate),
+  selected: is.Number,
+  params: isParams,
+  cyclingDeltas: asOptional(is.ArrayOf(is.LiteralOneOf([1, -1] as const))),
 });
 
 async function makeParams(
@@ -186,14 +194,22 @@ async function getDisplayAdjustment(
 const hlgroup = "CopilotSuggestion";
 const annotHlgroup = "CopilotAnnotation";
 
-async function drawPreview(denops: Denops, client: Client): Promise<void> {
+async function drawPreview(
+  denops: Denops,
+  client: Client,
+  context: CopilotContext,
+): Promise<void> {
   const candidate = await getCurrentCandidate(denops);
   const text = candidate?.insertText.split("\n");
   await clearPreview(denops);
   if (!candidate || !text) {
     return;
   }
-  const annot = "";
+  const annot = context.cyclingDeltas?.length
+    ? "(1/…)"
+    : context.cyclingDeltas?.length === 0
+    ? `(${context.selected + 1}/${context.candidates.length})`
+    : "";
   const [col, lnum, colEnd] = await batch.collect(
     denops,
     (denops) => [
@@ -222,7 +238,7 @@ async function drawPreview(denops: Denops, client: Client): Promise<void> {
       if (text.length > 1) {
         data.virt_lines = text.slice(1).map((line) => [[line, hlgroup]]);
         if (annot) {
-          data.virt_lines[-1]?.push([" "], [annot, annotHlgroup]);
+          data.virt_lines.at(-1)?.push([" "], [annot, annotHlgroup]);
         }
       } else if (annot) {
         data.virt_text.push([" "], [annot, annotHlgroup]);
@@ -362,13 +378,13 @@ export class Extension extends BaseExtension {
               await client.request("textDocument/inlineCompletion", params),
               is.ObjectOf({ items: is.ArrayOf(isCandidate) }),
             );
-            await denops.cmd("let b:__copilot = context", {
-              context: {
-                candidates: items,
-                selected: 0,
-                params,
-              } satisfies CopilotContext,
-            });
+            const context: CopilotContext = {
+              candidates: items,
+              selected: 0,
+              params,
+            };
+            await denops.cmd("let b:__copilot = context", { context });
+            await drawPreview(denops, client, context);
           } catch (e) {
             if (is.String(e) && JSON.parse(e).code === -32801) {
               // Ignore "Document Version Mismatch" error
@@ -376,7 +392,40 @@ export class Extension extends BaseExtension {
             }
             throw e;
           }
-          await drawPreview(denops, client);
+        });
+      },
+      suggestCycling: async (context) => {
+        await lock.lock(async () => {
+          const client = lspoints.getClient("copilot");
+          if (!client) {
+            return;
+          }
+          u.assert(context, isContext);
+          if (!context?.cyclingDeltas) {
+            return;
+          }
+          await drawPreview(denops, client, context);
+          context.params.context.triggerKind = CopilotTriggerKind.Invoked;
+          const { items } = u.ensure(
+            await client.request(
+              "textDocument/inlineCompletion",
+              context.params,
+            ),
+            is.ObjectOf({ items: is.ArrayOf(isCandidate) }),
+          );
+          const mod = (n: number, m: number) => ((n % m) + m) % m;
+          const newContext: CopilotContext = {
+            candidates: items,
+            selected: mod(
+              context.selected +
+                context.cyclingDeltas.reduce((a, b) => a + b, 0),
+              items.length,
+            ),
+            params: context.params,
+            cyclingDeltas: [],
+          };
+          await denops.cmd("let b:__copilot = newContext", { newContext });
+          await drawPreview(denops, client, newContext);
         });
       },
       drawPreview: async () => {
@@ -384,7 +433,9 @@ export class Extension extends BaseExtension {
         if (!client) {
           return;
         }
-        await drawPreview(denops, client);
+        const context = await denops
+          .call("getbufvar", "", "__copilot") as CopilotContext;
+        await drawPreview(denops, client, context);
       },
       clearPreview: async () => {
         await clearPreview(denops);

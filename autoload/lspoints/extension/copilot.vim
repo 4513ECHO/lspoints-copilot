@@ -15,12 +15,6 @@ else
   endif
 endif
 
-" let annot = exists('b:__copilot.cycling_callbacks') ?
-"      \   '(1/…)'
-"      \ : exists('b:__copilot.cycling') ?
-"      \   '(' .. (b:__copilot.selected + 1) .. '/' .. len(b:__copilot.candidates) .. ')'
-"      \ : ''
-
 function! lspoints#extension#copilot#accept(options = {}) abort
   call lspoints#denops#notify('executeCommand', ['copilot', 'accept', a:options])
 endfunction
@@ -82,12 +76,34 @@ function! lspoints#extension#copilot#suggest() abort
   call lspoints#denops#notify('executeCommand', ['copilot', 'suggest'])
 endfunction
 
+function! s:mod(n, m) abort
+  return ((a:n % a:m) + a:m) % a:m
+endfunction
+
+function! s:cycling(delta) abort
+  if !exists('b:__copilot')
+    return
+  endif
+  if !b:__copilot->has_key('cyclingDeltas')
+    " Request calculation
+    let b:__copilot.cyclingDeltas = [a:delta]
+    call lspoints#denops#notify('executeCommand', ['copilot', 'suggestCycling', b:__copilot])
+  elseif b:__copilot.cyclingDeltas->len()
+    " Caluculation is in progress, increment the delta
+    let b:__copilot.cyclingDeltas += [a:delta]
+  else
+    " Calcualtion has been completed, only draw preview
+    let b:__copilot.selected = s:mod(b:__copilot.selected + a:delta, len(b:__copilot.candidates))
+    call lspoints#denops#notify('executeCommand', ['copilot', 'drawPreview'])
+  endif
+endfunction
+
 function! lspoints#extension#copilot#next() abort
-  throw 'Not Implemented Yet'
+  call s:cycling(1)
 endfunction
 
 function! lspoints#extension#copilot#prev() abort
-  throw 'Not Implemented Yet'
+  call s:cycling(-1)
 endfunction
 
 function! lspoints#extension#copilot#dismiss() abort
