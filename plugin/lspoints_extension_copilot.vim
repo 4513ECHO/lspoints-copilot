@@ -10,19 +10,13 @@ endfunction
 
 augroup lspoints_extension_copilot
   autocmd!
-  autocmd ColorScheme * call s:on_colorscheme()
-  call s:on_colorscheme()
-  autocmd FileType * call lspoints#extension#copilot#on_filetype()
+  autocmd ColorScheme,VimEnter * call s:on_colorscheme()
+  autocmd FileType * call lspoints#extension#copilot#on_filetype() | call s:setup()
   autocmd InsertLeavePre * call lspoints#extension#copilot#on_insert_leave_pre()
   autocmd InsertEnter * call lspoints#extension#copilot#on_insert_enter()
-  autocmd CursorMovedI * call lspoints#extension#copilot#on_cursor_moved()
+  autocmd CursorMovedI * call lspoints#extension#copilot#on_cursor_movedi()
   autocmd BufEnter * call lspoints#extension#copilot#on_buf_enter()
-  autocmd BufUnload * call lspoints#extension#copilot#on_buf_unload()
-  if v:vim_did_enter
-    call lspoints#extension#copilot#initalize()
-  else
-    autocmd VimEnter * call lspoints#extension#copilot#initalize()
-  endif
+  autocmd VimEnter * call lspoints#extension#copilot#initialize()
 augroup END
 
 inoremap <Plug>(copilot-accept) <Cmd>call lspoints#extension#copilot#accept()<CR>
