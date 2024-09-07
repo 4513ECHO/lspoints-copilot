@@ -39,7 +39,9 @@ function! lspoints#extension#copilot#on_cursor_moved() abort
 endfunction
 
 function s:schedule() abort
-  call lspoints#denops#notify('executeCommand', ['copilot', 'drawPreview'])
+  if exists('b:__copilot')
+    call lspoints#denops#notify('executeCommand', ['copilot', 'drawPreview', b:__copilot])
+  endif
   call timer_stop(s:timer)
   let s:timer = timer_start(s:delay, function('s:trigger', [bufnr()]))
 endfunction
@@ -94,7 +96,7 @@ function! s:cycling(delta) abort
   else
     " Calcualtion has been completed, only draw preview
     let b:__copilot.selected = s:mod(b:__copilot.selected + a:delta, len(b:__copilot.candidates))
-    call lspoints#denops#notify('executeCommand', ['copilot', 'drawPreview'])
+    call lspoints#denops#notify('executeCommand', ['copilot', 'drawPreview', b:__copilot])
   endif
 endfunction
 
@@ -109,5 +111,5 @@ endfunction
 function! lspoints#extension#copilot#dismiss() abort
   call timer_stop(s:timer)
   unlet! b:__copilot
-  call lspoints#denops#notify('executeCommand', ['copilot', 'drawPreview'])
+  call lspoints#denops#notify('executeCommand', ['copilot', 'clearPreview'])
 endfunction
