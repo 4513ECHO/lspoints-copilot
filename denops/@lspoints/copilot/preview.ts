@@ -2,6 +2,9 @@ import type { Denops } from "jsr:@denops/std@^7.1.1";
 import type { Client } from "jsr:@kuuote/lspoints@^0.1.0";
 import type { CopilotContext } from "./types.ts";
 import * as batch from "jsr:@denops/std@^7.1.1/batch";
+import * as fn from "jsr:@denops/std@^7.1.1/function";
+import * as vimFn from "jsr:@denops/std@^7.1.1/function/vim";
+import * as nvimFn from "jsr:@denops/std@^7.1.1/function/nvim";
 import { getCurrentCandidate } from "./util.ts";
 
 type ExtmarkData = {
@@ -31,14 +34,11 @@ export async function drawPreview(
     : context.cyclingDeltas?.length === 0
     ? `(${context.selected + 1}/${context.candidates.length})`
     : "";
-  const [col, lnum, colEnd] = await batch.collect(
-    denops,
-    (denops) => [
-      denops.call("col", "."),
-      denops.call("line", "."),
-      denops.call("col", "$"),
-    ],
-  ) as [number, number, number];
+  const [col, lnum, colEnd] = await batch.collect(denops, (denops) => [
+    fn.col(denops, "."),
+    fn.line(denops, "."),
+    fn.col(denops, "$"),
+  ]);
   const newlinePos = candidate.insertText.indexOf("\n");
   text[0] = candidate.insertText.substring(
     col - 1,
@@ -63,10 +63,8 @@ async function nvimDrawPreview(
   lnum: number,
   col: number,
 ): Promise<void> {
-  const ns = await denops.call(
-    "nvim_create_namespace",
-    "lspoints-extension-copilot",
-  );
+  const ns = await nvimFn
+    .nvim_create_namespace(denops, "lspoints-extension-copilot");
   const data: ExtmarkData = {
     id: 1,
     virt_text: [[text[0]!, hlgroup]],
@@ -81,7 +79,7 @@ async function nvimDrawPreview(
   } else if (annot) {
     data.virt_text.push([" "], [annot, annotHlgroup]);
   }
-  await denops.call("nvim_buf_set_extmark", 0, ns, lnum, col, data);
+  await nvimFn.nvim_buf_set_extmark(denops, 0, ns, lnum, col, data);
 }
 
 async function vimDrawPreview(
@@ -93,16 +91,16 @@ async function vimDrawPreview(
   colEnd: number,
 ): Promise<void> {
   await batch.batch(denops, async (denops) => {
-    await denops.call("prop_add", lnum, col, { type: hlgroup, text: text[0] });
+    await vimFn.prop_add(denops, lnum, col, { type: hlgroup, text: text[0] });
     for (const line of text.slice(1)) {
-      await denops.call("prop_add", lnum, 0, {
+      await vimFn.prop_add(denops, lnum, 0, {
         type: hlgroup,
         text_align: "below",
         text: line,
       });
     }
     if (annot) {
-      await denops.call("prop_add", lnum, colEnd, {
+      await vimFn.prop_add(denops, lnum, colEnd, {
         type: annotHlgroup,
         text: " " + annot,
       });
@@ -113,16 +111,14 @@ async function vimDrawPreview(
 export async function clearPreview(denops: Denops): Promise<void> {
   switch (denops.meta.host) {
     case "nvim": {
-      const ns = await denops.call(
-        "nvim_create_namespace",
-        "lspoints-extension-copilot",
-      );
-      await denops.call("nvim_buf_del_extmark", 0, ns, 1);
+      const ns = await nvimFn
+        .nvim_create_namespace(denops, "lspoints-extension-copilot");
+      await nvimFn.nvim_buf_del_extmark(denops, 0, ns, 1);
       break;
     }
     case "vim":
-      await denops.call("prop_remove", { type: hlgroup, all: true });
-      await denops.call("prop_remove", { type: annotHlgroup, all: true });
+      await vimFn.prop_remove(denops, { type: hlgroup, all: true });
+      await vimFn.prop_remove(denops, { type: annotHlgroup, all: true });
       break;
   }
 }

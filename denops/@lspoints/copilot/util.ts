@@ -1,13 +1,15 @@
 import type { Denops } from "jsr:@denops/std@^7.1.1";
 import type { Candidate, CopilotContext } from "./types.ts";
 import { collect } from "jsr:@denops/std@^7.1.1/batch";
+import * as fn from "jsr:@denops/std@^7.1.1/function";
+import * as vars from "jsr:@denops/std@^7.1.1/variable";
 
 export async function setContext(
   denops: Denops,
   context: CopilotContext | null,
 ): Promise<void> {
   if (context) {
-    await denops.call("setbufvar", "", "__copilot", context);
+    await vars.b.set(denops, "__copilot", context);
   } else {
     await denops.cmd("unlet! b:__copilot");
   }
@@ -16,19 +18,16 @@ export async function setContext(
 export async function getContext(
   denops: Denops,
 ): Promise<CopilotContext | null> {
-  return await denops.call("getbufvar", "", "__copilot", null) as
-    | CopilotContext
-    | null;
+  return await vars.b.get<CopilotContext>(denops, "__copilot");
 }
 
 export async function getCurrentCandidate(
   denops: Denops,
 ): Promise<Candidate | null> {
   const [mode, context, lnum] = await collect(denops, (denops) => [
-    denops.call("mode") as Promise<string>,
-    // @ts-expect-error: batch.collect does not support compilerOptions.exactOptionalPropertyTypes
+    fn.mode(denops),
     getContext(denops),
-    denops.call("line", ".") as Promise<number>,
+    fn.line(denops, "."),
   ]);
   if (!/^[iR]/.test(mode) || !context?.candidates) {
     return null;

@@ -9,6 +9,8 @@ import {
 import { drawPreview } from "./preview.ts";
 import { getContext, setContext } from "./util.ts";
 import * as batch from "jsr:@denops/std@^7.1.1/batch";
+import * as fn from "jsr:@denops/std@^7.1.1/function";
+import * as op from "jsr:@denops/std@^7.1.1/option";
 import { ensure } from "jsr:@core/unknownutil@^4.3.0";
 import { is } from "jsr:@core/unknownutil@^4.3.0/is";
 
@@ -17,18 +19,15 @@ async function makeParams(
   client: Client,
 ): Promise<InlineCompletionParams | undefined> {
   const [bufnr, insertSpaces, shiftWidth, line, lnum, col, mode] = await batch
-    .collect(
-      denops,
-      (denops) => [
-        denops.call("bufnr"),
-        denops.eval("&expandtab"),
-        denops.call("shiftwidth"),
-        denops.call("getline", "."),
-        denops.call("line", "."),
-        denops.call("col", "."),
-        denops.call("mode"),
-      ],
-    ) as [number, number, number, string, number, number, string];
+    .collect(denops, (denops) => [
+      fn.bufnr(denops),
+      op.expandtab.getLocal(denops),
+      fn.shiftwidth(denops),
+      fn.getline(denops, "."),
+      fn.line(denops, "."),
+      fn.col(denops, "."),
+      fn.mode(denops),
+    ]);
   if (!client.isAttached(bufnr)) {
     return;
   }

@@ -3,24 +3,19 @@ import type { Client } from "jsr:@kuuote/lspoints@^0.1.0";
 import type { Candidate } from "./types.ts";
 import { clearPreview } from "./preview.ts";
 import { getCurrentCandidate, setContext } from "./util.ts";
-import * as batch from "jsr:@denops/std@^7.1.1/batch";
+import { collect } from "jsr:@denops/std@^7.1.1/batch";
+import * as fn from "jsr:@denops/std@^7.1.1/function";
 import { rawString } from "jsr:@denops/std@^7.1.1/eval/string";
 import { send } from "jsr:@denops/std@^7.1.1/helper/keymap";
 
-async function getDisplayAdjustment(
-  denops: Denops,
+function getDisplayAdjustment(
   candidate: Candidate | null,
-): Promise<[text: string, outdent: number, toDelete: number]> {
+  line: string,
+  col: number,
+): [text: string, outdent: number, toDelete: number] {
   if (!candidate) {
     return ["", 0, 0];
   }
-  const [line, col] = await batch.collect(
-    denops,
-    (denops) => [
-      denops.call("getline", "."),
-      denops.call("col", "."),
-    ],
-  ) as [string, number];
   const offset = col - 1;
   const selectedText = line.substring(0, candidate.range.start.character) +
     candidate.insertText.replace(/\n*$/, "");
@@ -48,10 +43,11 @@ export async function accpet(
 ): Promise<void> {
   const { pattern } = options as { pattern?: string };
   const candidate = await getCurrentCandidate(denops);
-  const [text, outdent, toDelete] = await getDisplayAdjustment(
-    denops,
-    candidate,
-  );
+  const [line, col] = await collect(denops, (denops) => [
+    fn.getline(denops, "."),
+    fn.col(denops, "."),
+  ]);
+  const [text, outdent, toDelete] = getDisplayAdjustment(candidate, line, col);
   if (!candidate || !text) {
     return;
   }
@@ -63,10 +59,6 @@ export async function accpet(
   if (text === newText) {
     await client.request("workspace/executeCommand", candidate.command);
   } else {
-    const [line, col] = await batch.collect(denops, (denops) => [
-      denops.call("getline", "."),
-      denops.call("col", "."),
-    ]) as [string, number];
     const lineText = line.substring(0, col - 1) + newText;
     await client.notify("textDocument/didPartiallyAcceptCompletion", {
       item: candidate,
