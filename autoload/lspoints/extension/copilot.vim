@@ -55,9 +55,7 @@ function! lspoints#extension#copilot#initialize() abort
     return
   endif
   call lspoints#start('copilot')
-  if has('nvim')
-    let s:ns = nvim_create_namespace('lspoints-extension-copilot')
-  else
+  if !has('nvim')
     if empty(prop_type_get(s:hlgroup))
       call prop_type_add(s:hlgroup, #{ highlight: s:hlgroup })
     endif

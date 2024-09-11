@@ -17,6 +17,16 @@ type ExtmarkData = {
 
 const hlgroup = "CopilotSuggestion";
 const annotHlgroup = "CopilotAnnotation";
+let ns: number;
+
+async function getNamespace(denops: Denops): Promise<number> {
+  if (ns) {
+    return ns;
+  }
+  ns = await nvimFn
+    .nvim_create_namespace(denops, "lspoints-extension-copilot") as number;
+  return ns;
+}
 
 export async function drawPreview(
   denops: Denops,
@@ -63,8 +73,7 @@ async function nvimDrawPreview(
   lnum: number,
   col: number,
 ): Promise<void> {
-  const ns = await nvimFn
-    .nvim_create_namespace(denops, "lspoints-extension-copilot");
+  const ns = await getNamespace(denops);
   const data: ExtmarkData = {
     id: 1,
     virt_text: [[text[0]!, hlgroup]],
@@ -111,8 +120,7 @@ async function vimDrawPreview(
 export async function clearPreview(denops: Denops): Promise<void> {
   switch (denops.meta.host) {
     case "nvim": {
-      const ns = await nvimFn
-        .nvim_create_namespace(denops, "lspoints-extension-copilot");
+      const ns = await getNamespace(denops);
       await nvimFn.nvim_buf_del_extmark(denops, 0, ns, 1);
       break;
     }
