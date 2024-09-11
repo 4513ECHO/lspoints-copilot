@@ -69,7 +69,9 @@ export async function accpet(
   await send(denops, [
     rawString`${"\\<Left>\\<Del>".repeat(outdent)}`,
     rawString`${"\\<Del>".repeat(toDelete)}`,
-    rawString`\<Cmd>set paste\<CR>${newText}\<Cmd>set nopaste\<CR>`,
+    rawString`\<Cmd>set paste\<CR>${
+      newText.replaceAll("\\", "\\\\")
+    }\<Cmd>set nopaste\<CR>`,
     ...(pattern ? [] : [rawString`\<End>`]),
   ]);
 }

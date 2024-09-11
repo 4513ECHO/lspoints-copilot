@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "exactOptionalPropertyTypes": false,
+    "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "useUnknownInCatchVariables": true
   },
@@ -17,7 +19,7 @@
   },
   "lock": false,
   "tasks": {
-    "lint": "deno fmt --check && deno lint && deno check .",
+    "check": "deno fmt --check && deno lint && deno check .",
     "update_agent": "deno run --allow-run=git --allow-read=copilot.vim --allow-write=. scripts/update_agent.ts"
   }
 }
