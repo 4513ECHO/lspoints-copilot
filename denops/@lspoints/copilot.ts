@@ -7,7 +7,20 @@ import { accpet } from "./copilot/accept.ts";
 import { assert } from "jsr:@core/unknownutil@^4.3.0";
 import { is } from "jsr:@core/unknownutil@^4.3.0/is";
 import { fromFileUrl } from "jsr:@std/path@^1.0.3/from-file-url";
-import { Lock } from "jsr:@core/asyncutil@^1.1.1/lock";
+
+class ExclusiveSignal {
+  #controller = new AbortController();
+
+  acquire(): AbortSignal {
+    this.abortActive();
+    return this.#controller.signal;
+  }
+
+  abortActive(): void {
+    this.#controller.abort();
+    this.#controller = new AbortController();
+  }
+}
 
 export class Extension extends BaseExtension {
   override initialize(denops: Denops, lspoints: Lspoints): Promise<void> {
@@ -42,7 +55,7 @@ export class Extension extends BaseExtension {
       },
     });
 
-    const lock = new Lock(0);
+    const signal = new ExclusiveSignal();
 
     lspoints.defineCommands("copilot", {
       accept: async (options) => {
@@ -57,9 +70,7 @@ export class Extension extends BaseExtension {
         if (!client) {
           return;
         }
-        await lock.lock(async () => {
-          await suggest(denops, client);
-        });
+        await suggest(denops, client, signal.acquire());
       },
       suggestCycling: async (context) => {
         assert(context, isCopilotContext);
@@ -67,9 +78,7 @@ export class Extension extends BaseExtension {
         if (!client) {
           return;
         }
-        await lock.lock(async () => {
-          await suggestCycling(denops, client, context);
-        });
+        await suggestCycling(denops, client, context, signal.acquire());
       },
       drawPreview: async (context) => {
         assert(context, isCopilotContext);
@@ -81,6 +90,9 @@ export class Extension extends BaseExtension {
       },
       clearPreview: async () => {
         await clearPreview(denops);
+      },
+      abortRequest: () => {
+        signal.abortActive();
       },
       notifyDidFocus: async (bufnr) => {
         const client = lspoints.getClient("copilot");

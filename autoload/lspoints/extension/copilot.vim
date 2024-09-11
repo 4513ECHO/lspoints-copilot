@@ -16,7 +16,7 @@ function! lspoints#extension#copilot#on_filetype() abort
 endfunction
 
 function! lspoints#extension#copilot#on_insert_leave_pre() abort
-  call lspoints#denops#notify('executeCommand', ['copilot', 'clearPreview'])
+  call s:clear()
 endfunction
 
 function! lspoints#extension#copilot#on_insert_enter() abort
@@ -29,7 +29,8 @@ endfunction
 
 function s:schedule() abort
   if exists('b:__copilot')
-    call lspoints#denops#notify('executeCommand', ['copilot', 'drawPreview', b:__copilot])
+    " Wait for drawing to avoid screen flickering
+    call lspoints#denops#request('executeCommand', ['copilot', 'drawPreview', b:__copilot])
   endif
   call timer_stop(s:timer)
   let s:timer = timer_start(s:delay, function('s:trigger', [bufnr()]))
@@ -104,7 +105,13 @@ function! lspoints#extension#copilot#prev() abort
 endfunction
 
 function! lspoints#extension#copilot#dismiss() abort
+  call s:clear()
+endfunction
+
+function! s:clear() abort
   call timer_stop(s:timer)
-  unlet! b:__copilot
+  let s:timer = -1
+  call lspoints#denops#notify('executeCommand', ['copilot', 'abortRequest'])
   call lspoints#denops#notify('executeCommand', ['copilot', 'clearPreview'])
+  unlet! b:__copilot
 endfunction

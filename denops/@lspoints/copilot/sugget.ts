@@ -1,6 +1,7 @@
 import type { Denops } from "jsr:@denops/std@^7.1.1";
 import type { Client } from "jsr:@kuuote/lspoints@^0.1.0";
 import {
+  type Candidate,
   type CopilotContext,
   type InlineCompletionParams,
   InlineCompletionTriggerKind,
@@ -50,47 +51,76 @@ async function makeParams(
   };
 }
 
-export async function suggest(denops: Denops, client: Client): Promise<void> {
+async function requestInlineCompletion(
+  client: Client,
+  params: InlineCompletionParams,
+  signal: AbortSignal,
+): Promise<Candidate[] | undefined> {
+  try {
+    return ensure(
+      await client.request("textDocument/inlineCompletion", params, { signal }),
+      is.ObjectOf({ items: is.ArrayOf(isCandidate) }),
+    ).items;
+  } catch (e) {
+    if (is.String(e)) {
+      const { code } = ensure(JSON.parse(e), is.ObjectOf({ code: is.Number }));
+      switch (code) {
+        case -32801: // "Document Version Mismatch"
+        case -32800: // "Request was cancelled"
+          return;
+      }
+    }
+    throw e;
+  }
+}
+
+export async function suggest(
+  denops: Denops,
+  client: Client,
+  signal: AbortSignal,
+): Promise<void> {
   const params = await makeParams(denops, client);
   if (!params) {
     // Not attached
     return;
   }
-  try {
-    const { items } = ensure(
-      await client.request("textDocument/inlineCompletion", params),
-      is.ObjectOf({ items: is.ArrayOf(isCandidate) }),
-    );
-    const context: CopilotContext = {
-      candidates: items,
-      selected: 0,
-      params,
-    };
-    await setContext(denops, context);
-    await drawPreview(denops, client, context);
-  } catch (e) {
-    if (is.String(e) && JSON.parse(e).code === -32801) {
-      // Ignore "Document Version Mismatch" error
-      return;
-    }
-    throw e;
+  const signalWithDenops = denops.interrupted
+    ? AbortSignal.any([signal, denops.interrupted])
+    : signal;
+  const items =
+    await requestInlineCompletion(client, params, signalWithDenops) ?? [];
+  if (!items.length) {
+    return;
   }
+  const context: CopilotContext = {
+    candidates: items,
+    selected: 0,
+    params,
+  };
+  await setContext(denops, context);
+  await drawPreview(denops, client, context);
 }
 
 export async function suggestCycling(
   denops: Denops,
   client: Client,
   context: CopilotContext,
+  signal: AbortSignal,
 ): Promise<void> {
   if (!context?.cyclingDeltas) {
     return;
   }
+  // Redraw to notify the request is started
   await drawPreview(denops, client, context);
   context.params.context.triggerKind = InlineCompletionTriggerKind.Invoked;
-  const { items } = ensure(
-    await client.request("textDocument/inlineCompletion", context.params),
-    is.ObjectOf({ items: is.ArrayOf(isCandidate) }),
-  );
+  const items = await requestInlineCompletion(
+    client,
+    context.params,
+    denops.interrupted ? AbortSignal.any([signal, denops.interrupted]) : signal,
+  ) ?? [];
+  if (!items.length) {
+    return;
+  }
   const mod = (n: number, m: number) => ((n % m) + m) % m;
   // Update the deltas
   const { cyclingDeltas } = await getContext(denops) ?? {};
