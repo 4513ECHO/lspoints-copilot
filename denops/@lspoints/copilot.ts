@@ -6,7 +6,6 @@ import { suggest, suggestCycling } from "./copilot/sugget.ts";
 import { accpet } from "./copilot/accept.ts";
 import { assert } from "jsr:@core/unknownutil@^4.3.0";
 import { is } from "jsr:@core/unknownutil@^4.3.0/is";
-import { fromFileUrl } from "jsr:@std/path@^1.0.3/from-file-url";
 
 class ExclusiveSignal {
   #controller = new AbortController();
@@ -42,13 +41,10 @@ export class Extension extends BaseExtension {
       disabledLanguages: [{ languageId: "." }],
     } satisfies CopilotSettings;
 
-    const entrypoint = fromFileUrl(
-      import.meta.resolve("../../dist/language-server.js"),
-    );
     lspoints.settings.patch({
       startOptions: {
         copilot: {
-          cmd: ["node", entrypoint, "--stdio"],
+          cmd: ["npx", "@github/copilot-language-server@1.229.0", "--stdio"],
           initializationOptions,
           settings,
         },
