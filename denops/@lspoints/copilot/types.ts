@@ -9,15 +9,14 @@ export const InlineCompletionTriggerKind = {
 } as const;
 export type InlineCompletionTriggerKind = 1 | 2;
 
-// TODO: Use interface instead of type
-export type InlineCompletionParams = {
+export interface InlineCompletionParams {
   context: {
     triggerKind: InlineCompletionTriggerKind;
   };
   formattingOptions: LSP.FormattingOptions;
   position: LSP.Position;
   textDocument: LSP.VersionedTextDocumentIdentifier;
-};
+}
 
 export interface CopilotSettings {
   http: {

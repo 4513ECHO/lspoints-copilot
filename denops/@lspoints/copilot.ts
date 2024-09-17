@@ -1,5 +1,5 @@
 import type { Denops } from "jsr:@denops/std@^7.1.1";
-import { BaseExtension, type Lspoints } from "jsr:@kuuote/lspoints@^0.1.0";
+import { BaseExtension, type Lspoints } from "jsr:@kuuote/lspoints@^0.1.1";
 import { type CopilotSettings, isCopilotContext } from "./copilot/types.ts";
 import { clearPreview, drawPreview } from "./copilot/preview.ts";
 import { suggest, suggestCycling } from "./copilot/sugget.ts";

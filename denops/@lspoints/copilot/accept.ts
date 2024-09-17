@@ -1,5 +1,5 @@
 import type { Denops } from "jsr:@denops/std@^7.1.1";
-import type { Client } from "jsr:@kuuote/lspoints@^0.1.0";
+import type { Client } from "jsr:@kuuote/lspoints@^0.1.1";
 import type { Candidate } from "./types.ts";
 import { clearPreview } from "./preview.ts";
 import { getCurrentCandidate, setContext } from "./util.ts";

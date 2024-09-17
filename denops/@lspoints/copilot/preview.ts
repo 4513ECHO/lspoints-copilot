@@ -1,5 +1,5 @@
 import type { Denops } from "jsr:@denops/std@^7.1.1";
-import type { Client } from "jsr:@kuuote/lspoints@^0.1.0";
+import type { Client } from "jsr:@kuuote/lspoints@^0.1.1";
 import type { CopilotContext } from "./types.ts";
 import * as batch from "jsr:@denops/std@^7.1.1/batch";
 import * as fn from "jsr:@denops/std@^7.1.1/function";
