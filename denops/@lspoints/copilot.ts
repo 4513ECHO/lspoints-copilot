@@ -21,8 +21,29 @@ class ExclusiveSignal {
   }
 }
 
+const cmds = {
+  node: ["npx", "@github/copilot-language-server@1.235.0", "--stdio"],
+  deno: [
+    "deno",
+    "run",
+    "--allow-all",
+    "--no-config",
+    "--no-lock",
+    "--node-modules-dir=none",
+    "npm:copilot-language-server-extracted@0.1.5",
+    "--stdio",
+  ],
+  bun: [
+    "bun",
+    "x",
+    // "--bun" flag does not work well at v1.1.27
+    "@github/copilot-language-server@1.235.0",
+    "--stdio",
+  ],
+};
+
 export class Extension extends BaseExtension {
-  override initialize(denops: Denops, lspoints: Lspoints): Promise<void> {
+  override async initialize(denops: Denops, lspoints: Lspoints): Promise<void> {
     const initializationOptions = {
       editorInfo: {
         name: denops.meta.host === "nvim" ? "Neovim" : "Vim",
@@ -41,10 +62,15 @@ export class Extension extends BaseExtension {
       disabledLanguages: [{ languageId: "." }],
     } satisfies CopilotSettings;
 
+    const backend = await denops.eval("g:copilot_client_backend") as
+      | "deno"
+      | "node"
+      | "bun";
+
     lspoints.settings.patch({
       startOptions: {
         copilot: {
-          cmd: ["npx", "@github/copilot-language-server@1.229.0", "--stdio"],
+          cmd: cmds[backend],
           initializationOptions,
           settings,
         },
