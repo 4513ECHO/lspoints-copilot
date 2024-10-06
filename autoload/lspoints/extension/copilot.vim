@@ -115,3 +115,49 @@ function! s:clear() abort
   call lspoints#denops#notify('executeCommand', ['copilot', 'clearPreview'])
   unlet! b:__copilot
 endfunction
+
+function! lspoints#extension#copilot#command_completion(...) abort
+  return ['disable', 'enable', 'signin', 'signout', 'status', 'version', 'feedback']->join("\n")
+endfunction
+
+if has('nvim')
+  function! lspoints#extension#copilot#popup_user_code(params) abort
+    let [code, lambda, bufnr, winid] = a:params
+    let [@*, @+] = [code, code]
+    call nvim_win_set_config(winid, #{ focusable: v:true, style: 'minimal' })
+    call nvim_set_current_win(winid)
+    call nvim_buf_set_lines(bufnr, 0, -1, v:true, [
+          \ 'Your one-time code: ' .. code,
+          \ '(already copied to system clipboard if provider is available)',
+          \ '',
+          \ 'Press <CR> to open GitHub in your browser',
+          \ ])
+    setlocal filetype=copilotauth nomodified nomodifiable
+    execute printf('nnoremap <buffer> <CR> <Cmd>call lspoints#denops#notify("%s", [])<CR>', lambda)
+  endfunction
+else
+  function! s:filter(lambda, winid, key) abort
+    if a:key ==# "\<CR>"
+      call lspoints#denops#notify(a:lambda, [])
+      return v:true
+    endif
+    return v:false
+  endfunction
+
+  function! lspoints#extension#copilot#popup_user_code(params) abort
+    let [code, lambda, bufnr, winid] = a:params
+    let [@*, @+] = [code, code]
+    call popup_settext(winid, [
+          \ 'Your one-time code: ' .. code,
+          \ '(already copied to system clipboard if supported)',
+          \ '',
+          \ 'Press <CR> to open GitHub in your browser',
+          \ ])
+    call popup_setoptions(winid, #{
+          \ filter: function('s:filter', [lambda]),
+          \ filtermode: 'n',
+          \ })
+    call setbufvar(bufnr, '&filetype', 'copilotauth')
+    redraw
+  endfunction
+endif

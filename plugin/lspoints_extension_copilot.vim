@@ -19,6 +19,9 @@ augroup lspoints_extension_copilot
   autocmd VimEnter * call lspoints#extension#copilot#initialize()
 augroup END
 
+command! -bar -nargs=+ -complete=custom,lspoints#extension#copilot#command_completion
+      \ Copilot call lspoints#denops#notify('executeCommand', ['copilot', 'command', [<f-args>]])
+
 inoremap <Plug>(copilot-accept) <Cmd>call lspoints#extension#copilot#accept()<CR>
 inoremap <Plug>(copilot-suggest) <Cmd>call lspoints#extension#copilot#suggest()<CR>
 inoremap <Plug>(copilot-next) <Cmd>call lspoints#extension#copilot#next()<CR>

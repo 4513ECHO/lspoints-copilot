@@ -1,6 +1,7 @@
 import type { Denops } from "jsr:@denops/std@^7.2.0";
 import { BaseExtension, type Lspoints } from "jsr:@kuuote/lspoints@^0.1.1";
 import { type CopilotSettings, isCopilotContext } from "./copilot/types.ts";
+import { signIn } from "./copilot/signin.ts";
 import { clearPreview, drawPreview } from "./copilot/preview.ts";
 import { suggest, suggestCycling } from "./copilot/sugget.ts";
 import { accpet } from "./copilot/accept.ts";
@@ -124,6 +125,36 @@ export class Extension extends BaseExtension {
         await client.notify("textDocument/didFocus", {
           textDocument: { uri: client.getUriFromBufNr(bufnr) },
         });
+      },
+      command: async (args) => {
+        assert(args, is.ArrayOf(is.String));
+        const echo = async (msg: unknown, err = false) => {
+          await denops.cmd(
+            err
+              ? "echohl ErrorMsg | echo 'Copilot:' msg | echohl NONE"
+              : "echo 'Copilot:' msg",
+            { msg },
+          );
+        };
+        const client = lspoints.getClient("copilot");
+        if (!client) {
+          await echo("Client does not attached to this buffer", true);
+          return;
+        }
+        switch (args[0]) {
+          case "status": {
+            const status = await client.request("checkStatus", {});
+            await echo(status);
+            break;
+          }
+          case "signin": {
+            const user = await signIn(denops, client);
+            await echo("Authenticated as GitHub user " + user);
+            break;
+          }
+          default:
+            await echo(`Unknown subcommand: ${args}`, true);
+        }
       },
     });
 

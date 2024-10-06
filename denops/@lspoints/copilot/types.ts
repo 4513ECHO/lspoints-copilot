@@ -18,6 +18,21 @@ export interface InlineCompletionParams {
   textDocument: LSP.VersionedTextDocumentIdentifier;
 }
 
+export interface CheckStatusResult {
+  status:
+    | "MaybeOK"
+    | "NotAuthorized"
+    | "NoTelemetryConsent"
+    | "NotSignedIn"
+    | "OK";
+  user?: string;
+}
+
+export interface SignInInitiateResult {
+  verificationUri: string;
+  userCode: string;
+}
+
 export interface CopilotSettings {
   http: {
     proxy: string | null;
@@ -66,6 +81,25 @@ export const isInlineCompletionParams: Predicate<
   position: LSP.Position.is,
   textDocument: LSP.VersionedTextDocumentIdentifier.is,
 });
+
+export const isCheckStatusResult: Predicate<CheckStatusResult> = is.ObjectOf({
+  status: is.LiteralOneOf(
+    [
+      "MaybeOK",
+      "NotAuthorized",
+      "NoTelemetryConsent",
+      "NotSignedIn",
+      "OK",
+    ] as const,
+  ),
+  user: asOptional(is.String),
+});
+
+export const isSignInInitiateResult: Predicate<SignInInitiateResult> = is
+  .ObjectOf({
+    verificationUri: is.String,
+    userCode: is.String,
+  });
 
 export const isCopilotContext: Predicate<CopilotContext> = is.ObjectOf({
   candidates: is.ArrayOf(isCandidate),
