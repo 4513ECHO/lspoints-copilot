@@ -1,8 +1,8 @@
-import type { Denops } from "jsr:@denops/std@^7.1.1";
+import type { Denops } from "jsr:@denops/std@^7.2.0";
 import type { Candidate, CopilotContext } from "./types.ts";
-import { collect } from "jsr:@denops/std@^7.1.1/batch";
-import * as fn from "jsr:@denops/std@^7.1.1/function";
-import * as vars from "jsr:@denops/std@^7.1.1/variable";
+import { collect } from "jsr:@denops/std@^7.2.0/batch";
+import * as fn from "jsr:@denops/std@^7.2.0/function";
+import * as vars from "jsr:@denops/std@^7.2.0/variable";
 
 export async function setContext(
   denops: Denops,

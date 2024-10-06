@@ -1,4 +1,4 @@
-import type { Denops } from "jsr:@denops/std@^7.1.1";
+import type { Denops } from "jsr:@denops/std@^7.2.0";
 import type { Client } from "jsr:@kuuote/lspoints@^0.1.1";
 import {
   type Candidate,
@@ -9,9 +9,9 @@ import {
 } from "./types.ts";
 import { drawPreview } from "./preview.ts";
 import { getContext, setContext } from "./util.ts";
-import * as batch from "jsr:@denops/std@^7.1.1/batch";
-import * as fn from "jsr:@denops/std@^7.1.1/function";
-import * as op from "jsr:@denops/std@^7.1.1/option";
+import * as batch from "jsr:@denops/std@^7.2.0/batch";
+import * as fn from "jsr:@denops/std@^7.2.0/function";
+import * as op from "jsr:@denops/std@^7.2.0/option";
 import { ensure } from "jsr:@core/unknownutil@^4.3.0/ensure";
 import { is } from "jsr:@core/unknownutil@^4.3.0/is";
 

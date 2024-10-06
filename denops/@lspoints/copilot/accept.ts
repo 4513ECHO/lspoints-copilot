@@ -1,12 +1,12 @@
-import type { Denops } from "jsr:@denops/std@^7.1.1";
+import type { Denops } from "jsr:@denops/std@^7.2.0";
 import type { Client } from "jsr:@kuuote/lspoints@^0.1.1";
 import type { Candidate } from "./types.ts";
 import { clearPreview } from "./preview.ts";
 import { getCurrentCandidate, setContext } from "./util.ts";
-import { collect } from "jsr:@denops/std@^7.1.1/batch";
-import * as fn from "jsr:@denops/std@^7.1.1/function";
-import { rawString } from "jsr:@denops/std@^7.1.1/eval/string";
-import { send } from "jsr:@denops/std@^7.1.1/helper/keymap";
+import { collect } from "jsr:@denops/std@^7.2.0/batch";
+import * as fn from "jsr:@denops/std@^7.2.0/function";
+import { rawString } from "jsr:@denops/std@^7.2.0/eval/string";
+import { send } from "jsr:@denops/std@^7.2.0/helper/keymap";
 
 function getDisplayAdjustment(
   candidate: Candidate | null,

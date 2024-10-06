@@ -1,10 +1,10 @@
-import type { Denops } from "jsr:@denops/std@^7.1.1";
+import type { Denops } from "jsr:@denops/std@^7.2.0";
 import type { Client } from "jsr:@kuuote/lspoints@^0.1.1";
 import type { CopilotContext } from "./types.ts";
-import * as batch from "jsr:@denops/std@^7.1.1/batch";
-import * as fn from "jsr:@denops/std@^7.1.1/function";
-import * as vimFn from "jsr:@denops/std@^7.1.1/function/vim";
-import * as nvimFn from "jsr:@denops/std@^7.1.1/function/nvim";
+import * as batch from "jsr:@denops/std@^7.2.0/batch";
+import * as fn from "jsr:@denops/std@^7.2.0/function";
+import * as vimFn from "jsr:@denops/std@^7.2.0/function/vim";
+import * as nvimFn from "jsr:@denops/std@^7.2.0/function/nvim";
 import { getCurrentCandidate } from "./util.ts";
 
 type ExtmarkData = {
