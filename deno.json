@@ -1,15 +1,13 @@
 {
   "compilerOptions": {
-    "exactOptionalPropertyTypes": false,
-    "noImplicitOverride": true,
-    "noUncheckedIndexedAccess": true,
-    "useUnknownInCatchVariables": true
+    "noUncheckedIndexedAccess": true
   },
   "lint": {
     "rules": {
       "include": [
         "eqeqeq",
-        "explicit-function-return-type"
+        "explicit-function-return-type",
+        "verbatim-module-syntax"
       ]
     }
   },
