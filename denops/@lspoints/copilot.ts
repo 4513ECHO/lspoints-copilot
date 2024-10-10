@@ -1,6 +1,7 @@
 import type { Denops } from "jsr:@denops/std@^7.2.0";
 import { BaseExtension, type Lspoints } from "jsr:@kuuote/lspoints@^0.1.1";
 import { type CopilotSettings, isCopilotContext } from "./copilot/types.ts";
+import { getBackend } from "./copilot/backend.ts";
 import { signIn } from "./copilot/signin.ts";
 import { clearPreview, drawPreview } from "./copilot/preview.ts";
 import { suggest, suggestCycling } from "./copilot/sugget.ts";
@@ -22,27 +23,6 @@ class ExclusiveSignal {
   }
 }
 
-const cmds = {
-  node: ["npx", "@github/copilot-language-server@1.235.0", "--stdio"],
-  deno: [
-    "deno",
-    "run",
-    "--allow-all",
-    "--no-config",
-    "--no-lock",
-    "--node-modules-dir=none",
-    "npm:copilot-language-server-extracted@0.1.6",
-    "--stdio",
-  ],
-  bun: [
-    "bun",
-    "x",
-    // "--bun" flag does not work well at v1.1.27
-    "@github/copilot-language-server@1.235.0",
-    "--stdio",
-  ],
-};
-
 export class Extension extends BaseExtension {
   override async initialize(denops: Denops, lspoints: Lspoints): Promise<void> {
     const initializationOptions = {
@@ -63,15 +43,10 @@ export class Extension extends BaseExtension {
       disabledLanguages: [{ languageId: "." }],
     } satisfies CopilotSettings;
 
-    const backend = await denops.eval("g:copilot_client_backend") as
-      | "deno"
-      | "node"
-      | "bun";
-
     lspoints.settings.patch({
       startOptions: {
         copilot: {
-          cmd: cmds[backend],
+          cmd: await getBackend(denops),
           initializationOptions,
           settings,
         },
