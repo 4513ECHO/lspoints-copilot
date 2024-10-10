@@ -28,4 +28,4 @@ inoremap <Plug>(copilot-next) <Cmd>call lspoints#extension#copilot#next()<CR>
 inoremap <Plug>(copilot-prev) <Cmd>call lspoints#extension#copilot#prev()<CR>
 inoremap <Plug>(copilot-dismiss) <Cmd>call lspoints#extension#copilot#dismiss()<CR>
 
-let g:copilot_client_backend = g:->get('copilot_client_backend', 'node')
+let g:copilot_client_backend = g:->get('copilot_client_backend', 'deno')

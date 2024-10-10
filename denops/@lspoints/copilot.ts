@@ -31,7 +31,7 @@ const cmds = {
     "--no-config",
     "--no-lock",
     "--node-modules-dir=none",
-    "npm:copilot-language-server-extracted@0.1.5",
+    "npm:copilot-language-server-extracted@0.1.6",
     "--stdio",
   ],
   bun: [
