@@ -32,8 +32,7 @@ export async function getBackend(denops: Denops): Promise<string[]> {
     isBackend,
   );
   if (backend === "deno") {
-    const deno = await vars.g.get<string>(denops, "denops#deno");
-    return [deno, ...cmds[backend]];
+    return [Deno.execPath(), ...cmds[backend]];
   } else {
     return cmds[backend];
   }
