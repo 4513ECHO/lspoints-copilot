@@ -10,8 +10,14 @@ endfunction
 
 function! lspoints#extension#copilot#on_filetype() abort
   let b:copilot_disabled = v:true
-  if &l:modifiable && &l:buflisted
+  if !&l:modifiable || !&l:buflisted
+    return
+  endif
+  if denops#plugin#is_loaded('lspoints')
     call lspoints#attach('copilot')
+  else
+    autocmd lspoints_extension_copilot User DenopsPluginPost:lspoints ++once
+          \ call lspoints#attach('copilot')
   endif
 endfunction
 
@@ -45,8 +51,8 @@ function! s:trigger(bufnr, timer) abort
 endfunction
 
 function! lspoints#extension#copilot#on_buf_enter() abort
-  if !denops#plugin#is_loaded('lspoints')
-    call lspoints#denops#register()
+  if !s:initialized
+    return
   endif
   call lspoints#denops#notify('executeCommand', ['copilot', 'notifyDidFocus', bufnr()])
 endfunction
@@ -68,8 +74,8 @@ function! lspoints#extension#copilot#initialize() abort
 endfunction
 
 function! lspoints#extension#copilot#suggest() abort
-  if !denops#plugin#is_loaded('lspoints')
-    call lspoints#denops#register()
+  if !s:initialized
+    return
   endif
   call lspoints#denops#notify('executeCommand', ['copilot', 'suggest'])
 endfunction
@@ -111,6 +117,9 @@ endfunction
 function! s:clear() abort
   call timer_stop(s:timer)
   let s:timer = -1
+  if !s:initialized
+    return
+  endif
   call lspoints#denops#notify('executeCommand', ['copilot', 'abortRequest'])
   call lspoints#denops#notify('executeCommand', ['copilot', 'clearPreview'])
   unlet! b:__copilot
