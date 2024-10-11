@@ -11,7 +11,7 @@ endfunction
 augroup lspoints_extension_copilot
   autocmd!
   autocmd ColorScheme,VimEnter * call s:on_colorscheme()
-  autocmd FileType * call lspoints#extension#copilot#on_filetype() | call s:setup()
+  autocmd FileType * call lspoints#extension#copilot#on_filetype()
   autocmd InsertLeavePre * call lspoints#extension#copilot#on_insert_leave_pre()
   autocmd InsertEnter * call lspoints#extension#copilot#on_insert_enter()
   autocmd CursorMovedI * call lspoints#extension#copilot#on_cursor_movedi()
