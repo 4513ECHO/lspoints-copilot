@@ -40,7 +40,7 @@ export async function signIn(denops: Denops, client: Client): Promise<string> {
     title: "GitHub Copilot Authentication",
   });
   await denops.call(
-    "lspoints#extension#copilot#popup_user_code",
+    "lspoints#copilot#popup_user_code",
     [userCode, openUri.id, popupWindow.bufnr, popupWindow.winid],
   );
 

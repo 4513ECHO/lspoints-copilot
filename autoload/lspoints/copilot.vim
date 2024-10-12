@@ -4,11 +4,11 @@ let s:hlgroup = 'CopilotSuggestion'
 let s:annot_hlgroup = 'CopilotAnnotation'
 let s:timer = -1
 
-function! lspoints#extension#copilot#accept(options = {}) abort
+function! lspoints#copilot#accept(options = {}) abort
   call lspoints#denops#notify('executeCommand', ['copilot', 'accept', a:options])
 endfunction
 
-function! lspoints#extension#copilot#on_filetype() abort
+function! lspoints#copilot#on_filetype() abort
   let b:copilot_disabled = v:true
   if !&l:modifiable || !&l:buflisted
     return
@@ -21,15 +21,15 @@ function! lspoints#extension#copilot#on_filetype() abort
   endif
 endfunction
 
-function! lspoints#extension#copilot#on_insert_leave_pre() abort
+function! lspoints#copilot#on_insert_leave_pre() abort
   call s:clear()
 endfunction
 
-function! lspoints#extension#copilot#on_insert_enter() abort
+function! lspoints#copilot#on_insert_enter() abort
   call s:schedule()
 endfunction
 
-function! lspoints#extension#copilot#on_cursor_movedi() abort
+function! lspoints#copilot#on_cursor_movedi() abort
   call s:schedule()
 endfunction
 
@@ -47,17 +47,17 @@ function! s:trigger(bufnr, timer) abort
     return
   endif
   let s:timer = -1
-  call lspoints#extension#copilot#suggest()
+  call lspoints#copilot#suggest()
 endfunction
 
-function! lspoints#extension#copilot#on_buf_enter() abort
+function! lspoints#copilot#on_buf_enter() abort
   if !s:initialized
     return
   endif
   call lspoints#denops#notify('executeCommand', ['copilot', 'notifyDidFocus', bufnr()])
 endfunction
 
-function! lspoints#extension#copilot#initialize() abort
+function! lspoints#copilot#initialize() abort
   if s:initialized || g:->get('lspoints#extensions', [])->index('copilot') < 0
     return
   endif
@@ -73,7 +73,7 @@ function! lspoints#extension#copilot#initialize() abort
   let s:initialized = v:true
 endfunction
 
-function! lspoints#extension#copilot#suggest() abort
+function! lspoints#copilot#suggest() abort
   if !s:initialized
     return
   endif
@@ -102,15 +102,15 @@ function! s:cycling(delta) abort
   endif
 endfunction
 
-function! lspoints#extension#copilot#next() abort
+function! lspoints#copilot#next() abort
   call s:cycling(1)
 endfunction
 
-function! lspoints#extension#copilot#prev() abort
+function! lspoints#copilot#prev() abort
   call s:cycling(-1)
 endfunction
 
-function! lspoints#extension#copilot#dismiss() abort
+function! lspoints#copilot#dismiss() abort
   call s:clear()
 endfunction
 
@@ -125,12 +125,12 @@ function! s:clear() abort
   unlet! b:__copilot
 endfunction
 
-function! lspoints#extension#copilot#command_completion(...) abort
+function! lspoints#copilot#command_completion(...) abort
   return ['disable', 'enable', 'signin', 'signout', 'status', 'version', 'feedback']->join("\n")
 endfunction
 
 if has('nvim')
-  function! lspoints#extension#copilot#popup_user_code(params) abort
+  function! lspoints#copilot#popup_user_code(params) abort
     let [code, lambda, bufnr, winid] = a:params
     let [@*, @+] = [code, code]
     call nvim_win_set_config(winid, #{ focusable: v:true, style: 'minimal' })
@@ -153,7 +153,7 @@ else
     return v:false
   endfunction
 
-  function! lspoints#extension#copilot#popup_user_code(params) abort
+  function! lspoints#copilot#popup_user_code(params) abort
     let [code, lambda, bufnr, winid] = a:params
     let [@*, @+] = [code, code]
     call popup_settext(winid, [

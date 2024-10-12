@@ -31,7 +31,7 @@ export class Extension extends BaseExtension {
         version: denops.meta.version,
       },
       editorPluginInfo: {
-        name: "lspoints--copilot",
+        name: "lspoints-copilot",
         version: "0.0.1",
       },
     };
