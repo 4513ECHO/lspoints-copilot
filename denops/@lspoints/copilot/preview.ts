@@ -24,7 +24,7 @@ async function getNamespace(denops: Denops): Promise<number> {
     return ns;
   }
   ns = await nvimFn
-    .nvim_create_namespace(denops, "lspoints-extension-copilot") as number;
+    .nvim_create_namespace(denops, "lspoints--copilot") as number;
   return ns;
 }
 

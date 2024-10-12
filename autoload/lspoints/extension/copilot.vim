@@ -16,7 +16,7 @@ function! lspoints#extension#copilot#on_filetype() abort
   if denops#plugin#is_loaded('lspoints')
     call lspoints#attach('copilot')
   else
-    autocmd lspoints_extension_copilot User DenopsPluginPost:lspoints ++once
+    autocmd lspoints_copilot User DenopsPluginPost:lspoints ++once
           \ call lspoints#attach('copilot')
   endif
 endfunction

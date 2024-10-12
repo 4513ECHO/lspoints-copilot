@@ -1,14 +1,14 @@
-if exists('g:loaded_lspoints_extension_copilot')
+if exists('g:loaded_lspoints_copilot')
   finish
 endif
-let g:loaded_lspoints_extension_copilot = v:true
+let g:loaded_lspoints_copilot = v:true
 
 function! s:on_colorscheme() abort
   hi def CopilotSuggestion ctermfg=244 guifg=#808080
   hi def link CopilotAnnotation Normal
 endfunction
 
-augroup lspoints_extension_copilot
+augroup lspoints_copilot
   autocmd!
   autocmd ColorScheme,VimEnter * call s:on_colorscheme()
   autocmd FileType * call lspoints#extension#copilot#on_filetype()
